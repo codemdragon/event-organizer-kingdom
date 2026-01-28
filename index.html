@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Games Kingdom PK | Premier Sports Event Organizers</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    :root {
+      --primary: #16a34a;
+      --secondary: #2563eb;
+      --gradient: linear-gradient(to right, var(--primary), var(--secondary));
+      --text-dark: #111827;
+      --text-light: #4b5563;
+      --bg-light: #f9fafb;
+      --white: #ffffff;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      color: var(--text-dark);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* Navigation */
+    header {
+      background: var(--gradient);
+      color: var(--white);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(8px);
+    }
+
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0.75rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      transition: transform 0.3s;
+      cursor: pointer;
+    }
+
+    .logo:hover {
+      transform: scale(1.02);
+    }
+
+    .logo h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+    }
+
+    .logo p {
+      font-size: 0.75rem;
+      opacity: 0.9;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    nav {
+      display: none;
+      gap: 2rem;
+    }
+
+    nav a {
+      color: var(--white);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.9375rem;
+      transition: all 0.2s;
+      position: relative;
+      padding: 0.5rem 0;
+    }
+
+    nav a::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: white;
+      transition: width 0.3s;
+    }
+
+    nav a:hover::after {
+      width: 100%;
+    }
+
+    nav a:hover {
+      opacity: 1;
+    }
+
+    /* Decorative Hamburger Button */
+    .menu-btn {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .menu-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .menu-btn span {
+      display: block;
+      width: 24px;
+      height: 2px;
+      background: white;
+      border-radius: 2px;
+      transition: all 0.4s;
+    }
+
+    .menu-btn.open span:nth-child(1) {
+      transform: translateY(8px) rotate(45deg);
+    }
+
+    .menu-btn.open span:nth-child(2) {
+      opacity: 0;
+      transform: translateX(-10px);
+    }
+
+    .menu-btn.open span:nth-child(3) {
+      transform: translateY(-8px) rotate(-45deg);
+    }
+
+    @media (min-width: 768px) {
+      nav {
+        display: flex;
+      }
+
+      .menu-btn {
+        display: none;
+      }
+    }
+
+    /* Hero / Carousel */
+    .hero {
+      position: relative;
+      height: 600px;
+      background: #000;
+      color: var(--white);
+      overflow: hidden;
+    }
+
+    .carousel-track {
+      height: 100%;
+      display: flex;
+      transition: transform 0.5s ease-in-out;
+    }
+
+    .carousel-slide {
+      min-width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    .carousel-slide img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.5;
+    }
+
+    .hero-content {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 2rem;
+      z-index: 10;
+    }
+
+    .hero-content h2 {
+      font-size: 3rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .hero-content p {
+      font-size: 1.25rem;
+      max-width: 800px;
+    }
+
+    /* Sections */
+    section {
+      padding: 5rem 1rem;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .section-title {
+      text-align: center;
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 3rem;
+    }
+
+    /* About */
+    .about {
+      background: var(--bg-light);
+      text-align: center;
+    }
+
+    .about p {
+      max-width: 800px;
+      margin: 0 auto 1.5rem;
+      font-size: 1.125rem;
+      color: var(--text-light);
+    }
+
+    /* Events */
+    .events-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+    }
+
+    .event-card {
+      background: var(--white);
+      border-radius: 0.5rem;
+      overflow: hidden;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s;
+    }
+
+    .event-card:hover {
+      transform: translateY(-5px);
+    }
+
+    .event-card img {
+      width: 100%;
+      height: 250px;
+      object-fit: cover;
+    }
+
+    .event-info {
+      padding: 1.5rem;
+    }
+
+    .event-info h3 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+      color: var(--primary);
+    }
+
+    .event-features {
+      list-style: none;
+      margin-top: 1rem;
+    }
+
+    .event-features li {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      color: var(--text-light);
+    }
+
+    .event-features li::before {
+      content: "🏆";
+      font-size: 0.875rem;
+    }
+
+    /* Location */
+    #map {
+      height: 450px;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Footer */
+    footer {
+      background: var(--text-dark);
+      color: var(--white);
+      padding: 3rem 1rem;
+      text-align: center;
+    }
+
+    .footer-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      font-weight: 700;
+      font-size: 1.25rem;
+    }
+
+    /* Mobile Menu */
+    .mobile-menu {
+      position: fixed;
+      top: 0;
+      right: -280px;
+      width: 280px;
+      height: 100%;
+      background: white;
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 2000;
+      padding: 2rem;
+      box-shadow: -10px 0 30px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .mobile-menu.active {
+      transform: translateX(-280px);
+    }
+
+    .mobile-menu h3 {
+      color: var(--primary);
+      font-size: 1.5rem;
+      margin-bottom: 2rem;
+      border-bottom: 2px solid #f3f4f6;
+      padding-bottom: 1rem;
+    }
+
+    .mobile-menu nav {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .mobile-menu nav a {
+      color: var(--text-dark);
+      font-size: 1.125rem;
+      padding: 1rem;
+      border-radius: 12px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .mobile-menu nav a:hover {
+      background: #f3f4f6;
+      color: var(--primary);
+      transform: translateX(5px);
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(4px);
+      display: none;
+      z-index: 1500;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .overlay.active {
+      display: block;
+      opacity: 1;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="nav-container">
+      <div class="logo" onclick="window.scrollTo(0,0)">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+          <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+          <path d="M4 22h16"></path>
+          <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
+          <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
+          <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
+        </svg>
+        <div>
+          <h1>Games Kingdom PK</h1>
+          <p>Karachi, Pakistan</p>
+        </div>
+      </div>
+      <nav>
+        <a href="#home">Home</a>
+        <a href="#events">Events</a>
+        <a href="#location">Location</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <button class="menu-btn" id="burger-btn" onclick="toggleMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </header>
+
+  <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+  <div class="mobile-menu" id="mobile-menu">
+    <h3>Menu</h3>
+    <nav>
+      <a href="#home" onclick="toggleMenu()">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <path
+            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
+          </path>
+        </svg>
+        Home
+      </a>
+      <a href="#events" onclick="toggleMenu()">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+        </svg>
+        Events
+      </a>
+      <a href="#location" onclick="toggleMenu()">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+          <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+        </svg>
+        Location
+      </a>
+      <a href="#contact" onclick="toggleMenu()">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <path
+            d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+          </path>
+        </svg>
+        Contact
+      </a>
+    </nav>
+  </div>
+
+  <section id="home" class="hero">
+    <div class="carousel-track" id="carousel-track">
+      <!-- Images will be loaded here -->
+    </div>
+    <div class="hero-content">
+      <h2>Welcome to Games Kingdom PK</h2>
+      <p>Premier Football & Cricket Event Organizers in Karachi</p>
+    </div>
+  </section>
+
+  <section class="about">
+    <div class="container">
+      <h2 class="section-title">About Games Kingdom PK</h2>
+      <p>We are Karachi's leading sports event organizers, specializing in Football and Cricket tournaments. With years
+        of experience, we bring together players, teams, and fans to create unforgettable sporting experiences.</p>
+      <p>From local community matches to professional tournaments, we handle everything from venue booking to match
+        coordination, ensuring every event runs smoothly.</p>
+    </div>
+  </section>
+
+  <section id="events">
+    <div class="container">
+      <h2 class="section-title">Our Sports Events</h2>
+      <div class="events-grid" id="events-grid">
+        <!-- Events will be loaded here -->
+      </div>
+    </div>
+  </section>
+
+  <section id="location">
+    <div class="container">
+      <h2 class="section-title">Visit Our Location</h2>
+      <div id="map"></div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <div class="footer-logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+          <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+          <path d="M4 22h16"></path>
+          <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
+          <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
+          <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
+        </svg>
+        <span>Games Kingdom PK</span>
+      </div>
+      <p id="footer-tagline">Premier Sports Event Organizers in Karachi, Pakistan</p>
+      <p style="margin-top: 1rem; opacity: 0.6; font-size: 0.875rem;">© 2026 Games Kingdom PK. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    // CONFIG - Update this for production
+    const REPO_OWNER = 'codemdragon';
+    const REPO_NAME = 'event-organizer-kingdom';
+    const DB_URL = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/data/db.json`;
+
+    let db = null;
+
+    async function init() {
+      try {
+        const res = await fetch(DB_URL);
+        db = await res.json();
+        renderUI();
+      } catch (e) {
+        console.error("Failed to load DB", e);
+        // Fallback or static message
+      }
+    }
+
+    function renderUI() {
+      if (!db) return;
+
+      // Render Carousel
+      const track = document.getElementById('carousel-track');
+      track.innerHTML = db.carouselImages.map(img => `
+                <div class="carousel-slide">
+                    <img src="${img}" alt="Sports Event">
+                </div>
+            `).join('');
+
+      // Simple carousel logic
+      let index = 0;
+      setInterval(() => {
+        index = (index + 1) % db.carouselImages.length;
+        track.style.transform = `translateX(-${index * 100}%)`;
+      }, 5000);
+
+      // Render Events
+      const grid = document.getElementById('events-grid');
+      grid.innerHTML = db.events.map(ev => `
+                <div class="event-card">
+                    <img src="${ev.imageUrl}" alt="${ev.title}">
+                    <div class="event-info">
+                        <h3>${ev.title}</h3>
+                        <p>${ev.description}</p>
+                        <ul class="event-features">
+                            ${ev.features.map(f => `<li>${f}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `).join('');
+
+      // Render Map
+      initMap();
+    }
+
+    function initMap() {
+      const primary = db.locations[0];
+      const map = L.map('map').setView([primary.lat, primary.lng], 13);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(map);
+
+      const marker = L.marker([primary.lat, primary.lng]).addTo(map);
+      marker.bindPopup(`<b>${primary.name}</b><br>${primary.address}`).openPopup();
+
+      marker.on('click', () => {
+        window.open(primary.googleMapsUrl, '_blank');
+      });
+    }
+
+    function toggleMenu() {
+      document.getElementById('mobile-menu').classList.toggle('active');
+      document.getElementById('overlay').classList.toggle('active');
+      document.getElementById('burger-btn').classList.toggle('open');
+      document.body.style.overflow = document.body.style.overflow === 'hidden' ? '' : 'hidden';
+    }
+
+    init();
+  </script>
+</body>
+
+</html>

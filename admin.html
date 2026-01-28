@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kingdom Admin | Games Kingdom PK</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #16a34a;
+            --secondary: #2563eb;
+            --bg: #f8fafc;
+            --white: #fff;
+            --border: #e2e8f0;
+            --text: #1e293b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding-bottom: 5rem;
+        }
+
+        .navbar {
+            background: var(--white);
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar h2 {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .card {
+            background: var(--white);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        .card h3 {
+            margin-bottom: 1.25rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card h3::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.4rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+
+        .input-group input,
+        .input-group textarea,
+        .input-group select {
+            width: 100%;
+            padding: 0.6rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-family: inherit;
+        }
+
+        .row {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .row .input-group {
+            flex: 1;
+        }
+
+        button {
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #15803d;
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.75rem;
+        }
+
+        .btn-del {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-add {
+            background: var(--primary);
+            color: white;
+            margin-bottom: 1rem;
+        }
+
+        #login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .login-box {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .login-box h2 {
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+
+        .item-list {
+            list-style: none;
+        }
+
+        .item-list li {
+            background: #fff;
+            border: 1px solid var(--border);
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 6px;
+            display: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .status.success {
+            background: #f0fdf4;
+            color: #166534;
+            display: block;
+            border: 1px solid #bbf7d0;
+        }
+
+        .status.error {
+            background: #fef2f2;
+            color: #991b1b;
+            display: block;
+            border: 1px solid #fecaca;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="login-screen">
+        <div class="login-box">
+            <h2>Kingdom Admin</h2>
+            <p style="margin-bottom: 1.5rem; color: #64748b;">Enter GitHub Token to manage site</p>
+            <div class="input-group">
+                <input type="password" id="gh-token" placeholder="ghp_xxx...">
+            </div>
+            <button class="btn-primary" style="width: 100%" onclick="login()">Access Control Panel</button>
+            <p style="margin-top: 1rem; font-size: 0.75rem; color: #94a3b8;">Required: repo & workflow permissions</p>
+        </div>
+    </div>
+
+    <div id="admin-app" class="hidden">
+        <div class="navbar">
+            <h2>Kingdom Manager</h2>
+            <button onclick="logout()"
+                style="background:transparent; color: var(--primary); border: 1px solid var(--primary);">Logout</button>
+        </div>
+
+        <div class="container">
+            <!-- Repo Config -->
+            <div class="card">
+                <h3>Repo Settings</h3>
+                <div class="row">
+                    <div class="input-group">
+                        <label>Owner</label>
+                        <input type="text" id="repo-owner" value="codemdragon">
+                    </div>
+                    <div class="input-group">
+                        <label>Repo Name</label>
+                        <input type="text" id="repo-name" value="event-organizer-kingdom">
+                    </div>
+                </div>
+                <button class="btn-sm btn-secondary" onclick="loadDb()">Load data from GitHub</button>
+            </div>
+
+            <!-- Carousel -->
+            <div class="card">
+                <h3>Carousel Images</h3>
+                <ul class="item-list" id="carousel-list"></ul>
+                <div class="input-group" style="margin-top:1rem;">
+                    <label>Add New Image</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="text" id="new-carousel-img" placeholder="Paste image URL..." style="flex: 1">
+                        <input type="file" id="new-carousel-file" accept="image/*" class="hidden">
+                        <button class="btn-sm btn-secondary"
+                            onclick="document.getElementById('new-carousel-file').click()">Upload</button>
+                    </div>
+                    <button class="btn-primary btn-sm" id="btn-add-carousel" onclick="addCarousel()"
+                        style="margin-top: 0.5rem;">Add to Carousel</button>
+                </div>
+            </div>
+
+            <!-- Sports Events -->
+            <div class="card">
+                <h3>Sports Events</h3>
+                <ul class="item-list" id="events-list"></ul>
+                <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid var(--border);">
+                <h4>Add/Edit Event</h4>
+                <div class="row">
+                    <div class="input-group">
+                        <label>Title</label>
+                        <input type="text" id="event-title">
+                    </div>
+                    <div class="input-group">
+                        <label>ID</label>
+                        <input type="text" id="event-id">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Description</label>
+                    <textarea id="event-desc" rows="3"></textarea>
+                </div>
+                <div class="input-group">
+                    <label>Image URL</label>
+                    <input type="text" id="event-img">
+                </div>
+                <div class="input-group">
+                    <label>Features (comma separated)</label>
+                    <input type="text" id="event-features" placeholder="Feature 1, Feature 2, Feature 3">
+                </div>
+                <button class="btn-primary" id="btn-save-event" onclick="saveEvent()">Add Event</button>
+            </div>
+
+            <!-- Locations -->
+            <div class="card">
+                <h3>Map Locations</h3>
+                <ul class="item-list" id="locations-list"></ul>
+                <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid var(--border);">
+                <h4>Modify Primary Location</h4>
+                <div class="input-group">
+                    <label>Name</label>
+                    <input type="text" id="loc-name">
+                </div>
+                <div class="row">
+                    <div class="input-group">
+                        <label>Latitude</label>
+                        <input type="text" id="loc-lat">
+                    </div>
+                    <div class="input-group">
+                        <label>Longitude</label>
+                        <input type="text" id="loc-lng">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Google Maps Directions Link</label>
+                    <input type="url" id="loc-google">
+                </div>
+                <button class="btn-primary" onclick="updateLocation()">Save Location Settings</button>
+            </div>
+
+            <!-- Finalize -->
+            <div class="card" style="border-color: var(--primary);">
+                <h3>Save Changes</h3>
+                <p style="margin-bottom: 1rem; color: #64748b; font-size: 0.875rem;">Push all modifications to the live
+                    repository. This will trigger a Vercel rebuild.</p>
+                <button class="btn-primary" onclick="pushToGitHub()"
+                    style="width: 100%; padding: 1rem; font-size: 1rem; background: var(--gradient) !important;">Push to
+                    Live Website</button>
+                <div id="save-status" class="status"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let API_URL = '';
+        let CURRENT_SHA = '';
+        let token = localStorage.getItem('kingdom_gh_token');
+        let db = { carouselImages: [], events: [], locations: [], contact: {} };
+        let editingEventIndex = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (token) {
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('admin-app').classList.remove('hidden');
+                loadDb();
+            }
+        });
+
+        function login() {
+            const inputToken = document.getElementById('gh-token').value;
+            if (inputToken.length > 30) {
+                localStorage.setItem('kingdom_gh_token', inputToken);
+                location.reload();
+            } else { alert('Please enter a valid GitHub token.'); }
+        }
+
+        function logout() { localStorage.removeItem('kingdom_gh_token'); location.reload(); }
+
+        async function loadDb() {
+            const owner = document.getElementById('repo-owner').value;
+            const repo = document.getElementById('repo-name').value;
+            API_URL = `https://api.github.com/repos/${owner}/${repo}/contents/data/db.json`;
+
+            try {
+                const res = await fetch(API_URL, { headers: { 'Authorization': `token ${localStorage.getItem('kingdom_gh_token')}` } });
+                if (!res.ok) throw new Error("Could not find db.json at /data/db.json");
+                const data = await res.json();
+                CURRENT_SHA = data.sha;
+                db = JSON.parse(atob(data.content));
+                renderUI();
+            } catch (err) { alert("Error: " + err.message); }
+        }
+
+        function renderUI() {
+            // Carousel
+            document.getElementById('carousel-list').innerHTML = db.carouselImages.map((url, i) => `
+                <li>
+                    <span style="font-size:0.75rem; color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%;">${url}</span>
+                    <button class="btn-sm btn-del" onclick="removeCarousel(${i})">Remove</button>
+                </li>
+            `).join('');
+
+            // Events
+            document.getElementById('events-list').innerHTML = db.events.map((ev, i) => `
+                <li>
+                    <strong>${ev.title}</strong>
+                    <div>
+                        <button class="btn-sm btn-secondary" onclick="editEvent(${i})">Edit</button>
+                        <button class="btn-sm btn-del" onclick="removeEvent(${i})">Del</button>
+                    </div>
+                </li>
+            `).join('');
+
+            // Locations (showing only primary for simplicity)
+            const loc = db.locations[0];
+            if (loc) {
+                document.getElementById('loc-name').value = loc.name;
+                document.getElementById('loc-lat').value = loc.lat;
+                document.getElementById('loc-lng').value = loc.lng;
+                document.getElementById('loc-google').value = loc.googleMapsUrl;
+            }
+        }
+
+        // Carousel Functions
+        async function addCarousel() {
+            const urlInput = document.getElementById('new-carousel-img');
+            const fileInput = document.getElementById('new-carousel-file');
+
+            if (fileInput.files.length > 0) {
+                const url = await uploadToGithub(fileInput.files[0], 'carousel');
+                if (url) db.carouselImages.push(url);
+            } else if (urlInput.value) {
+                db.carouselImages.push(urlInput.value);
+            }
+
+            urlInput.value = '';
+            fileInput.value = '';
+            renderUI();
+        }
+
+        function removeCarousel(i) {
+            db.carouselImages.splice(i, 1);
+            renderUI();
+        }
+
+        // Event Functions
+        function editEvent(i) {
+            editingEventIndex = i;
+            const ev = db.events[i];
+            document.getElementById('event-title').value = ev.title;
+            document.getElementById('event-id').value = ev.id;
+            document.getElementById('event-desc').value = ev.description;
+            document.getElementById('event-img').value = ev.imageUrl;
+            document.getElementById('event-features').value = ev.features.join(', ');
+            document.getElementById('btn-save-event').innerText = "Update Event";
+        }
+
+        function saveEvent() {
+            const ev = {
+                title: document.getElementById('event-title').value,
+                id: document.getElementById('event-id').value,
+                description: document.getElementById('event-desc').value,
+                imageUrl: document.getElementById('event-img').value,
+                features: document.getElementById('event-features').value.split(',').map(f => f.trim())
+            };
+
+            if (editingEventIndex !== null) {
+                db.events[editingEventIndex] = ev;
+                editingEventIndex = null;
+            } else {
+                db.events.push(ev);
+            }
+
+            resetEventForm();
+            renderUI();
+        }
+
+        function removeEvent(i) {
+            if (confirm('Delete event?')) {
+                db.events.splice(i, 1);
+                renderUI();
+            }
+        }
+
+        function resetEventForm() {
+            document.getElementById('event-title').value = '';
+            document.getElementById('event-id').value = '';
+            document.getElementById('event-desc').value = '';
+            document.getElementById('event-img').value = '';
+            document.getElementById('event-features').value = '';
+            document.getElementById('btn-save-event').innerText = "Add Event";
+        }
+
+        // Location
+        function updateLocation() {
+            db.locations[0] = {
+                name: document.getElementById('loc-name').value,
+                lat: parseFloat(document.getElementById('loc-lat').value),
+                lng: parseFloat(document.getElementById('loc-lng').value),
+                googleMapsUrl: document.getElementById('loc-google').value
+            };
+            alert("Location settings updated in local memory. Don't forget to push!");
+        }
+
+        // GitHub Integration
+        async function uploadToGithub(file, prefix) {
+            const fileName = `${prefix}-${Date.now()}.${file.name.split('.').pop()}`;
+            const owner = document.getElementById('repo-owner').value;
+            const repo = document.getElementById('repo-name').value;
+            const uploadUrl = `https://api.github.com/repos/${owner}/${repo}/contents/assets/${fileName}`;
+
+            const reader = new FileReader();
+            return new Promise((resolve) => {
+                reader.onload = async () => {
+                    const content = reader.result.split(',')[1];
+                    const res = await fetch(uploadUrl, {
+                        method: 'PUT',
+                        headers: { 'Authorization': `token ${localStorage.getItem('kingdom_gh_token')}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: `Upload asset ${fileName}`, content })
+                    });
+                    const data = await res.json();
+                    resolve(data.content.download_url);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function pushToGitHub() {
+            const status = document.getElementById('save-status');
+            status.className = 'status'; status.textContent = 'Committing changes...'; status.style.display = 'block';
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `token ${localStorage.getItem('kingdom_gh_token')}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: "Update site data via Admin Panel",
+                        content: btoa(JSON.stringify(db, null, 2)),
+                        sha: CURRENT_SHA
+                    })
+                });
+                if (!res.ok) throw new Error('Failed to update. Check token permissions.');
+                const data = await res.json();
+                CURRENT_SHA = data.content.sha;
+                status.textContent = 'Successfully updated! Site rebuilding now.'; status.classList.add('success');
+            } catch (err) { status.textContent = 'Error: ' + err.message; status.classList.add('error'); }
+        }
+    </script>
+</body>
+
+</html>
