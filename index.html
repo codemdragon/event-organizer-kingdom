@@ -391,6 +391,75 @@
       opacity: 1;
     }
 
+    /* Newsletter Section */
+    .newsletter {
+      background: var(--bg-light);
+      padding: 5rem 1rem;
+      text-align: center;
+    }
+
+    .newsletter-card {
+      max-width: 600px;
+      margin: 0 auto;
+      background: var(--white);
+      padding: 3rem 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+
+    .newsletter h2 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      color: var(--text-dark);
+    }
+
+    .newsletter p {
+      color: var(--text-light);
+      margin-bottom: 2rem;
+    }
+
+    .subscribe-form {
+      display: flex;
+      gap: 0.5rem;
+      max-width: 450px;
+      margin: 0 auto;
+    }
+
+    .subscribe-form input {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .subscribe-form input:focus {
+      border-color: var(--primary);
+    }
+
+    .subscribe-btn {
+      background: var(--gradient);
+      color: var(--white);
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .subscribe-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    @media (max-width: 480px) {
+      .subscribe-form {
+        flex-direction: column;
+      }
+    }
+
     /* Preloader */
     #preloader {
       position: fixed;
@@ -590,6 +659,21 @@
     </div>
   </section>
 
+  <section id="contact" class="newsletter">
+    <div class="container">
+      <div class="newsletter-card">
+        <h2>Stay in the Loop</h2>
+        <p>Subscribe to our newsletter to get the latest updates on upcoming Football and Cricket tournaments in
+          Karachi.</p>
+        <form class="subscribe-form"
+          onsubmit="event.preventDefault(); alert('Subscription feature coming soon with Mailchimp!');">
+          <input type="email" placeholder="Enter your email address" required>
+          <button type="submit" class="subscribe-btn">Subscribe</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
   <footer>
     <div class="container">
       <div class="footer-logo">
@@ -605,8 +689,11 @@
       </div>
       <p id="footer-tagline">Premier Sports Event Organizers in Karachi, Pakistan <img
           src="https://flagcdn.com/w40/pk.png" class="flag-icon" alt="Pakistan"></p>
-      <p style="margin-top: 1rem; opacity: 0.6; font-size: 0.875rem;">Made with ❤️ in Pakistan | © 2026 Games Kingdom
-        PK. All rights reserved.</p>
+      <p style="margin-top: 1rem; opacity: 0.6; font-size: 0.875rem;">
+        Made with ❤️ by <a href="https://codemsportfolio.netlify.app" target="_blank"
+          style="color: inherit; text-decoration: underline;">Codem</a> in Pakistan | © 2026 Games Kingdom PK. All
+        rights reserved.
+      </p>
     </div>
   </footer>
 
