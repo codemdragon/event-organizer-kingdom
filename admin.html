@@ -230,11 +230,26 @@
     <div id="login-screen">
         <div class="login-box">
             <h2>Kingdom Admin</h2>
-            <p style="margin-bottom: 1.5rem; color: #64748b;">Enter GitHub Token to manage site</p>
+            <p style="margin-bottom: 1.5rem; color: #64748b;">Enter GitHub Token & Repo Info</p>
+
             <div class="input-group">
-                <input type="password" id="gh-token" placeholder="ghp_xxx...">
+                <label>GitHub Personal Access Token</label>
+                <input type="password" id="gh-token" placeholder="gh_p...">
             </div>
-            <button class="btn-primary" style="width: 100%" onclick="login()">Access Control Panel</button>
+
+            <div class="row">
+                <div class="input-group">
+                    <label>Repo Owner</label>
+                    <input type="text" id="repo-owner-login" value="codemdragon">
+                </div>
+                <div class="input-group">
+                    <label>Repo Name</label>
+                    <input type="text" id="repo-name-login" value="event-organizer-kingdom">
+                </div>
+            </div>
+
+            <button class="btn-primary" style="width: 100%; margin-top: 1rem;" onclick="login()">Access Control
+                Panel</button>
             <p style="margin-top: 1rem; font-size: 0.75rem; color: #94a3b8;">Required: repo & workflow permissions</p>
         </div>
     </div>
@@ -360,6 +375,12 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             if (token) {
+                // Pre-fill repo settings if available in localStorage
+                const savedOwner = localStorage.getItem('kingdom_repo_owner');
+                const savedRepo = localStorage.getItem('kingdom_repo_name');
+                if (savedOwner) document.getElementById('repo-owner').value = savedOwner;
+                if (savedRepo) document.getElementById('repo-name').value = savedRepo;
+
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('admin-app').classList.remove('hidden');
                 loadDb();
@@ -367,57 +388,86 @@
         });
 
         function login() {
-            const inputToken = document.getElementById('gh-token').value;
-            if (inputToken.length > 30) {
+            const inputToken = document.getElementById('gh-token').value.trim();
+            const owner = document.getElementById('repo-owner-login')?.value || 'codemdragon';
+            const repo = document.getElementById('repo-name-login')?.value || 'event-organizer-kingdom';
+
+            if (inputToken) {
                 localStorage.setItem('kingdom_gh_token', inputToken);
+                localStorage.setItem('kingdom_repo_owner', owner);
+                localStorage.setItem('kingdom_repo_name', repo);
                 location.reload();
-            } else { alert('Please enter a valid GitHub token.'); }
+            } else { alert('Please enter your GitHub Personal Access Token.'); }
         }
 
-        function logout() { localStorage.removeItem('kingdom_gh_token'); location.reload(); }
+        function logout() {
+            localStorage.removeItem('kingdom_gh_token');
+            location.reload();
+        }
 
         async function loadDb() {
             const owner = document.getElementById('repo-owner').value;
             const repo = document.getElementById('repo-name').value;
+            localStorage.setItem('kingdom_repo_owner', owner);
+            localStorage.setItem('kingdom_repo_name', repo);
+
             API_URL = `https://api.github.com/repos/${owner}/${repo}/contents/data/db.json`;
 
             try {
-                const res = await fetch(API_URL, { headers: { 'Authorization': `token ${localStorage.getItem('kingdom_gh_token')}` } });
-                if (!res.ok) throw new Error("Could not find db.json at /data/db.json");
+                const res = await fetch(API_URL, {
+                    headers: { 'Authorization': `token ${token}` }
+                });
+
+                if (res.status === 401) throw new Error("Invalid GitHub Token. Please logout and try again.");
+                if (res.status === 404) throw new Error(`db.json not found at https://github.com/${owner}/${repo}/blob/main/data/db.json`);
+                if (!res.ok) throw new Error(`GitHub API Error: ${res.statusText}`);
+
                 const data = await res.json();
                 CURRENT_SHA = data.sha;
-                db = JSON.parse(atob(data.content));
+
+                // Robust base64 decoding (handles newlines)
+                const decodedContent = decodeURIComponent(escape(atob(data.content.replace(/\s/g, ''))));
+                db = JSON.parse(decodedContent);
+
                 renderUI();
-            } catch (err) { alert("Error: " + err.message); }
+            } catch (err) {
+                alert("Load Failed: " + err.message);
+                console.error(err);
+            }
         }
 
         function renderUI() {
+            // Ensure db structure is intact
+            if (!db.carouselImages) db.carouselImages = [];
+            if (!db.events) db.events = [];
+            if (!db.locations) db.locations = [{ name: 'Default', lat: 24.86, lng: 67.0, googleMapsUrl: '' }];
+
             // Carousel
             document.getElementById('carousel-list').innerHTML = db.carouselImages.map((url, i) => `
                 <li>
                     <span style="font-size:0.75rem; color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%;">${url}</span>
                     <button class="btn-sm btn-del" onclick="removeCarousel(${i})">Remove</button>
                 </li>
-            `).join('');
+            `).join('') || '<li style="color:#94a3b8; font-size:0.875rem;">No images in carousel</li>';
 
             // Events
             document.getElementById('events-list').innerHTML = db.events.map((ev, i) => `
                 <li>
-                    <strong>${ev.title}</strong>
+                    <strong>${ev.title || 'Untitled Event'}</strong>
                     <div>
                         <button class="btn-sm btn-secondary" onclick="editEvent(${i})">Edit</button>
                         <button class="btn-sm btn-del" onclick="removeEvent(${i})">Del</button>
                     </div>
                 </li>
-            `).join('');
+            `).join('') || '<li style="color:#94a3b8; font-size:0.875rem;">No events found</li>';
 
             // Locations (showing only primary for simplicity)
             const loc = db.locations[0];
             if (loc) {
-                document.getElementById('loc-name').value = loc.name;
-                document.getElementById('loc-lat').value = loc.lat;
-                document.getElementById('loc-lng').value = loc.lng;
-                document.getElementById('loc-google').value = loc.googleMapsUrl;
+                document.getElementById('loc-name').value = loc.name || '';
+                document.getElementById('loc-lat').value = loc.lat || '';
+                document.getElementById('loc-lng').value = loc.lng || '';
+                document.getElementById('loc-google').value = loc.googleMapsUrl || '';
             }
         }
 
