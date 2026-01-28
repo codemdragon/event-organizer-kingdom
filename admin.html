@@ -368,6 +368,8 @@
 
     <script>
         (function () {
+            console.log("Kingdom Admin: Script initializing...");
+
             let API_URL = '';
             let CURRENT_SHA = '';
             let token = localStorage.getItem('kingdom_gh_token');
@@ -375,15 +377,20 @@
             let editingEventIndex = null;
 
             async function init() {
+                console.log("Kingdom Admin: init() starting, token exists:", !!token);
                 if (token) {
                     const savedOwner = localStorage.getItem('kingdom_repo_owner');
                     const savedRepo = localStorage.getItem('kingdom_repo_name');
+                    console.log("Kingdom Admin: Saved owner/repo:", savedOwner, savedRepo);
+
                     if (savedOwner) document.getElementById('repo-owner').value = savedOwner;
                     if (savedRepo) document.getElementById('repo-name').value = savedRepo;
 
                     document.getElementById('login-screen').classList.add('hidden');
                     document.getElementById('admin-app').classList.remove('hidden');
                     await loadDb();
+                } else {
+                    console.log("Kingdom Admin: No token, showing login screen.");
                 }
             }
 
@@ -395,28 +402,36 @@
             }
 
             window.login = function () {
+                console.log("Kingdom Admin: Login button clicked");
                 const inputToken = document.getElementById('gh-token').value.trim();
                 const owner = document.getElementById('repo-owner-login')?.value || 'codemdragon';
                 const repo = document.getElementById('repo-name-login')?.value || 'event-organizer-kingdom';
 
                 if (inputToken) {
-                    localStorage.setItem('kingdom_gh_token', inputToken);
-                    localStorage.setItem('kingdom_repo_owner', owner);
-                    localStorage.setItem('kingdom_repo_name', repo);
-                    location.reload();
+                    try {
+                        localStorage.setItem('kingdom_gh_token', inputToken);
+                        localStorage.setItem('kingdom_repo_owner', owner);
+                        localStorage.setItem('kingdom_repo_name', repo);
+                        console.log("Kingdom Admin: Credentials saved, reloading...");
+                        location.reload();
+                    } catch (e) {
+                        alert("Storage Error: Your browser might be blocking localStorage. Try a different browser or disabling 'Incognito' mode.");
+                        console.error("Storage Error:", e);
+                    }
                 } else { alert('Please enter your GitHub Personal Access Token.'); }
             };
 
             window.logout = function () {
                 localStorage.removeItem('kingdom_gh_token');
+                localStorage.removeItem('kingdom_repo_owner');
+                localStorage.removeItem('kingdom_repo_name');
                 location.reload();
             };
 
             async function loadDb() {
                 const owner = document.getElementById('repo-owner').value;
                 const repo = document.getElementById('repo-name').value;
-                localStorage.setItem('kingdom_repo_owner', owner);
-                localStorage.setItem('kingdom_repo_name', repo);
+                console.log("Kingdom Admin: loadDb() targeting", owner, repo);
 
                 API_URL = `https://api.github.com/repos/${owner}/${repo}/contents/data/db.json`;
 
@@ -426,43 +441,58 @@
                         cache: 'no-store'
                     });
 
-                    if (res.status === 401) throw new Error("Invalid GitHub Token. Please logout and try again.");
-                    if (res.status === 404) throw new Error(`db.json not found in ${owner}/${repo}`);
-                    if (!res.ok) throw new Error(`GitHub Error: ${res.status}`);
+                    console.log("Kingdom Admin: Fetch response status:", res.status);
+
+                    if (res.status === 401) throw new Error("Invalid GitHub Token. Please check your token and try again.");
+                    if (res.status === 404) throw new Error(`db.json not found in /data/ folder of repo: ${owner}/${repo}`);
+                    if (!res.ok) throw new Error(`GitHub API Error: ${res.status} ${res.statusText}`);
 
                     const data = await res.json();
                     CURRENT_SHA = data.sha;
+                    console.log("Kingdom Admin: Data received, SHA:", CURRENT_SHA);
 
-                    // Modern UTF-8 Base64 decoding
-                    const binaryString = atob(data.content.replace(/\s/g, ''));
-                    const bytes = new Uint8Array(binaryString.length);
-                    for (let i = 0; i < binaryString.length; i++) {
-                        bytes[i] = binaryString.charCodeAt(i);
+                    // Robust UTF-8 Base64 decoding
+                    try {
+                        const binaryString = atob(data.content.replace(/\s/g, ''));
+                        const bytes = new Uint8Array(binaryString.length);
+                        for (let i = 0; i < binaryString.length; i++) {
+                            bytes[i] = binaryString.charCodeAt(i);
+                        }
+                        const decodedContent = new TextDecoder().decode(bytes);
+                        db = JSON.parse(decodedContent);
+                        console.log("Kingdom Admin: DB parsed successfully");
+                    } catch (e) {
+                        console.error("Parse Error:", e);
+                        throw new Error("Failed to parse db.json content. Ensure it is valid JSON.");
                     }
-                    const decodedContent = new TextDecoder().decode(bytes);
-                    db = JSON.parse(decodedContent);
 
                     renderUI();
                 } catch (err) {
+                    console.error("Kingdom Admin Error:", err);
                     alert("Load Failed: " + err.message);
-                    if (err.message.includes("Token")) logout();
+                    if (err.message.includes("Token")) {
+                        localStorage.removeItem('kingdom_gh_token');
+                        location.reload();
+                    }
                 }
             }
             window.loadDb = loadDb; // Make globally accessible for the button
 
             function renderUI() {
+                console.log("Kingdom Admin: Rendering UI components...");
                 if (!db.carouselImages) db.carouselImages = [];
                 if (!db.events) db.events = [];
                 if (!db.locations) db.locations = [{ name: '', lat: 0, lng: 0, googleMapsUrl: '' }];
 
-                document.getElementById('carousel-list').innerHTML = db.carouselImages.map((url, i) => `
+                const carouselHtml = db.carouselImages.map((url, i) => `
                     <li>
                         <span style="font-size:0.75rem; color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 65%;">${url}</span>
                         <button class="btn-sm btn-del" onclick="removeCarousel(${i})">Remove</button>
                     </li>
-                `).join('') || '<li style="color:#64748b; font-size:0.875rem;">No images</li>';
+                `).join('');
+                document.getElementById('carousel-list').innerHTML = carouselHtml || '<li style="color:#64748b; font-size:0.875rem;">No images</li>';
 
-                document.getElementById('events-list').innerHTML = db.events.map((ev, i) => `
+                const eventsHtml = db.events.map((ev, i) => `
                     <li>
                         <strong>${ev.title || 'Untitled'}</strong>
                         <div>
@@ -470,7 +500,8 @@
                             <button class="btn-sm btn-del" onclick="removeEvent(${i})">Del</button>
                         </div>
                     </li>
-                `).join('') || '<li style="color:#64748b; font-size:0.875rem;">No events</li>';
+                `).join('');
+                document.getElementById('events-list').innerHTML = eventsHtml || '<li style="color:#64748b; font-size:0.875rem;">No events</li>';
 
                 const loc = db.locations[0];
                 if (loc) {
