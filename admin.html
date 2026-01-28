@@ -367,234 +367,237 @@
     </div>
 
     <script>
-        let API_URL = '';
-        let CURRENT_SHA = '';
-        let token = localStorage.getItem('kingdom_gh_token');
-        let db = { carouselImages: [], events: [], locations: [], contact: {} };
-        let editingEventIndex = null;
+        (function () {
+            let API_URL = '';
+            let CURRENT_SHA = '';
+            let token = localStorage.getItem('kingdom_gh_token');
+            let db = { carouselImages: [], events: [], locations: [], contact: {} };
+            let editingEventIndex = null;
 
-        document.addEventListener('DOMContentLoaded', () => {
-            if (token) {
-                // Pre-fill repo settings if available in localStorage
-                const savedOwner = localStorage.getItem('kingdom_repo_owner');
-                const savedRepo = localStorage.getItem('kingdom_repo_name');
-                if (savedOwner) document.getElementById('repo-owner').value = savedOwner;
-                if (savedRepo) document.getElementById('repo-name').value = savedRepo;
+            async function init() {
+                if (token) {
+                    const savedOwner = localStorage.getItem('kingdom_repo_owner');
+                    const savedRepo = localStorage.getItem('kingdom_repo_name');
+                    if (savedOwner) document.getElementById('repo-owner').value = savedOwner;
+                    if (savedRepo) document.getElementById('repo-name').value = savedRepo;
 
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('admin-app').classList.remove('hidden');
-                loadDb();
+                    document.getElementById('login-screen').classList.add('hidden');
+                    document.getElementById('admin-app').classList.remove('hidden');
+                    await loadDb();
+                }
             }
-        });
 
-        function login() {
-            const inputToken = document.getElementById('gh-token').value.trim();
-            const owner = document.getElementById('repo-owner-login')?.value || 'codemdragon';
-            const repo = document.getElementById('repo-name-login')?.value || 'event-organizer-kingdom';
+            // Run on load
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
 
-            if (inputToken) {
-                localStorage.setItem('kingdom_gh_token', inputToken);
+            window.login = function () {
+                const inputToken = document.getElementById('gh-token').value.trim();
+                const owner = document.getElementById('repo-owner-login')?.value || 'codemdragon';
+                const repo = document.getElementById('repo-name-login')?.value || 'event-organizer-kingdom';
+
+                if (inputToken) {
+                    localStorage.setItem('kingdom_gh_token', inputToken);
+                    localStorage.setItem('kingdom_repo_owner', owner);
+                    localStorage.setItem('kingdom_repo_name', repo);
+                    location.reload();
+                } else { alert('Please enter your GitHub Personal Access Token.'); }
+            };
+
+            window.logout = function () {
+                localStorage.removeItem('kingdom_gh_token');
+                location.reload();
+            };
+
+            async function loadDb() {
+                const owner = document.getElementById('repo-owner').value;
+                const repo = document.getElementById('repo-name').value;
                 localStorage.setItem('kingdom_repo_owner', owner);
                 localStorage.setItem('kingdom_repo_name', repo);
-                location.reload();
-            } else { alert('Please enter your GitHub Personal Access Token.'); }
-        }
 
-        function logout() {
-            localStorage.removeItem('kingdom_gh_token');
-            location.reload();
-        }
+                API_URL = `https://api.github.com/repos/${owner}/${repo}/contents/data/db.json`;
 
-        async function loadDb() {
-            const owner = document.getElementById('repo-owner').value;
-            const repo = document.getElementById('repo-name').value;
-            localStorage.setItem('kingdom_repo_owner', owner);
-            localStorage.setItem('kingdom_repo_name', repo);
-
-            API_URL = `https://api.github.com/repos/${owner}/${repo}/contents/data/db.json`;
-
-            try {
-                const res = await fetch(API_URL, {
-                    headers: { 'Authorization': `token ${token}` }
-                });
-
-                if (res.status === 401) throw new Error("Invalid GitHub Token. Please logout and try again.");
-                if (res.status === 404) throw new Error(`db.json not found at https://github.com/${owner}/${repo}/blob/main/data/db.json`);
-                if (!res.ok) throw new Error(`GitHub API Error: ${res.statusText}`);
-
-                const data = await res.json();
-                CURRENT_SHA = data.sha;
-
-                // Robust base64 decoding (handles newlines)
-                const decodedContent = decodeURIComponent(escape(atob(data.content.replace(/\s/g, ''))));
-                db = JSON.parse(decodedContent);
-
-                renderUI();
-            } catch (err) {
-                alert("Load Failed: " + err.message);
-                console.error(err);
-            }
-        }
-
-        function renderUI() {
-            // Ensure db structure is intact
-            if (!db.carouselImages) db.carouselImages = [];
-            if (!db.events) db.events = [];
-            if (!db.locations) db.locations = [{ name: 'Default', lat: 24.86, lng: 67.0, googleMapsUrl: '' }];
-
-            // Carousel
-            document.getElementById('carousel-list').innerHTML = db.carouselImages.map((url, i) => `
-                <li>
-                    <span style="font-size:0.75rem; color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%;">${url}</span>
-                    <button class="btn-sm btn-del" onclick="removeCarousel(${i})">Remove</button>
-                </li>
-            `).join('') || '<li style="color:#94a3b8; font-size:0.875rem;">No images in carousel</li>';
-
-            // Events
-            document.getElementById('events-list').innerHTML = db.events.map((ev, i) => `
-                <li>
-                    <strong>${ev.title || 'Untitled Event'}</strong>
-                    <div>
-                        <button class="btn-sm btn-secondary" onclick="editEvent(${i})">Edit</button>
-                        <button class="btn-sm btn-del" onclick="removeEvent(${i})">Del</button>
-                    </div>
-                </li>
-            `).join('') || '<li style="color:#94a3b8; font-size:0.875rem;">No events found</li>';
-
-            // Locations (showing only primary for simplicity)
-            const loc = db.locations[0];
-            if (loc) {
-                document.getElementById('loc-name').value = loc.name || '';
-                document.getElementById('loc-lat').value = loc.lat || '';
-                document.getElementById('loc-lng').value = loc.lng || '';
-                document.getElementById('loc-google').value = loc.googleMapsUrl || '';
-            }
-        }
-
-        // Carousel Functions
-        async function addCarousel() {
-            const urlInput = document.getElementById('new-carousel-img');
-            const fileInput = document.getElementById('new-carousel-file');
-
-            if (fileInput.files.length > 0) {
-                const url = await uploadToGithub(fileInput.files[0], 'carousel');
-                if (url) db.carouselImages.push(url);
-            } else if (urlInput.value) {
-                db.carouselImages.push(urlInput.value);
-            }
-
-            urlInput.value = '';
-            fileInput.value = '';
-            renderUI();
-        }
-
-        function removeCarousel(i) {
-            db.carouselImages.splice(i, 1);
-            renderUI();
-        }
-
-        // Event Functions
-        function editEvent(i) {
-            editingEventIndex = i;
-            const ev = db.events[i];
-            document.getElementById('event-title').value = ev.title;
-            document.getElementById('event-id').value = ev.id;
-            document.getElementById('event-desc').value = ev.description;
-            document.getElementById('event-img').value = ev.imageUrl;
-            document.getElementById('event-features').value = ev.features.join(', ');
-            document.getElementById('btn-save-event').innerText = "Update Event";
-        }
-
-        function saveEvent() {
-            const ev = {
-                title: document.getElementById('event-title').value,
-                id: document.getElementById('event-id').value,
-                description: document.getElementById('event-desc').value,
-                imageUrl: document.getElementById('event-img').value,
-                features: document.getElementById('event-features').value.split(',').map(f => f.trim())
-            };
-
-            if (editingEventIndex !== null) {
-                db.events[editingEventIndex] = ev;
-                editingEventIndex = null;
-            } else {
-                db.events.push(ev);
-            }
-
-            resetEventForm();
-            renderUI();
-        }
-
-        function removeEvent(i) {
-            if (confirm('Delete event?')) {
-                db.events.splice(i, 1);
-                renderUI();
-            }
-        }
-
-        function resetEventForm() {
-            document.getElementById('event-title').value = '';
-            document.getElementById('event-id').value = '';
-            document.getElementById('event-desc').value = '';
-            document.getElementById('event-img').value = '';
-            document.getElementById('event-features').value = '';
-            document.getElementById('btn-save-event').innerText = "Add Event";
-        }
-
-        // Location
-        function updateLocation() {
-            db.locations[0] = {
-                name: document.getElementById('loc-name').value,
-                lat: parseFloat(document.getElementById('loc-lat').value),
-                lng: parseFloat(document.getElementById('loc-lng').value),
-                googleMapsUrl: document.getElementById('loc-google').value
-            };
-            alert("Location settings updated in local memory. Don't forget to push!");
-        }
-
-        // GitHub Integration
-        async function uploadToGithub(file, prefix) {
-            const fileName = `${prefix}-${Date.now()}.${file.name.split('.').pop()}`;
-            const owner = document.getElementById('repo-owner').value;
-            const repo = document.getElementById('repo-name').value;
-            const uploadUrl = `https://api.github.com/repos/${owner}/${repo}/contents/assets/${fileName}`;
-
-            const reader = new FileReader();
-            return new Promise((resolve) => {
-                reader.onload = async () => {
-                    const content = reader.result.split(',')[1];
-                    const res = await fetch(uploadUrl, {
-                        method: 'PUT',
-                        headers: { 'Authorization': `token ${localStorage.getItem('kingdom_gh_token')}`, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ message: `Upload asset ${fileName}`, content })
+                try {
+                    const res = await fetch(API_URL, {
+                        headers: { 'Authorization': `token ${token}` },
+                        cache: 'no-store'
                     });
+
+                    if (res.status === 401) throw new Error("Invalid GitHub Token. Please logout and try again.");
+                    if (res.status === 404) throw new Error(`db.json not found in ${owner}/${repo}`);
+                    if (!res.ok) throw new Error(`GitHub Error: ${res.status}`);
+
                     const data = await res.json();
-                    resolve(data.content.download_url);
+                    CURRENT_SHA = data.sha;
+
+                    // Modern UTF-8 Base64 decoding
+                    const binaryString = atob(data.content.replace(/\s/g, ''));
+                    const bytes = new Uint8Array(binaryString.length);
+                    for (let i = 0; i < binaryString.length; i++) {
+                        bytes[i] = binaryString.charCodeAt(i);
+                    }
+                    const decodedContent = new TextDecoder().decode(bytes);
+                    db = JSON.parse(decodedContent);
+
+                    renderUI();
+                } catch (err) {
+                    alert("Load Failed: " + err.message);
+                    if (err.message.includes("Token")) logout();
+                }
+            }
+            window.loadDb = loadDb; // Make globally accessible for the button
+
+            function renderUI() {
+                if (!db.carouselImages) db.carouselImages = [];
+                if (!db.events) db.events = [];
+                if (!db.locations) db.locations = [{ name: '', lat: 0, lng: 0, googleMapsUrl: '' }];
+
+                document.getElementById('carousel-list').innerHTML = db.carouselImages.map((url, i) => `
+                    <li>
+                        <span style="font-size:0.75rem; color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 65%;">${url}</span>
+                        <button class="btn-sm btn-del" onclick="removeCarousel(${i})">Remove</button>
+                    </li>
+                `).join('') || '<li style="color:#64748b; font-size:0.875rem;">No images</li>';
+
+                document.getElementById('events-list').innerHTML = db.events.map((ev, i) => `
+                    <li>
+                        <strong>${ev.title || 'Untitled'}</strong>
+                        <div>
+                            <button class="btn-sm btn-secondary" onclick="editEvent(${i})">Edit</button>
+                            <button class="btn-sm btn-del" onclick="removeEvent(${i})">Del</button>
+                        </div>
+                    </li>
+                `).join('') || '<li style="color:#64748b; font-size:0.875rem;">No events</li>';
+
+                const loc = db.locations[0];
+                if (loc) {
+                    document.getElementById('loc-name').value = loc.name || '';
+                    document.getElementById('loc-lat').value = loc.lat || '';
+                    document.getElementById('loc-lng').value = loc.lng || '';
+                    document.getElementById('loc-google').value = loc.googleMapsUrl || '';
+                }
+            }
+
+            window.removeCarousel = function (i) {
+                db.carouselImages.splice(i, 1);
+                renderUI();
+            };
+
+            window.editEvent = function (i) {
+                editingEventIndex = i;
+                const ev = db.events[i];
+                document.getElementById('event-title').value = ev.title || '';
+                document.getElementById('event-id').value = ev.id || '';
+                document.getElementById('event-desc').value = ev.description || '';
+                document.getElementById('event-img').value = ev.imageUrl || '';
+                document.getElementById('event-features').value = (ev.features || []).join(', ');
+                document.getElementById('btn-save-event').innerText = "Update Event";
+            };
+
+            window.saveEvent = function () {
+                const ev = {
+                    title: document.getElementById('event-title').value,
+                    id: document.getElementById('event-id').value,
+                    description: document.getElementById('event-desc').value,
+                    imageUrl: document.getElementById('event-img').value,
+                    features: document.getElementById('event-features').value.split(',').map(f => f.trim()).filter(f => f)
                 };
-                reader.readAsDataURL(file);
-            });
-        }
+                if (editingEventIndex !== null) db.events[editingEventIndex] = ev;
+                else db.events.push(ev);
 
-        async function pushToGitHub() {
-            const status = document.getElementById('save-status');
-            status.className = 'status'; status.textContent = 'Committing changes...'; status.style.display = 'block';
-
-            try {
-                const res = await fetch(API_URL, {
-                    method: 'PUT',
-                    headers: { 'Authorization': `token ${localStorage.getItem('kingdom_gh_token')}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        message: "Update site data via Admin Panel",
-                        content: btoa(JSON.stringify(db, null, 2)),
-                        sha: CURRENT_SHA
-                    })
+                editingEventIndex = null;
+                document.querySelectorAll('.card input, .card textarea').forEach(el => {
+                    if (el.id.startsWith('event-')) el.value = '';
                 });
-                if (!res.ok) throw new Error('Failed to update. Check token permissions.');
-                const data = await res.json();
-                CURRENT_SHA = data.content.sha;
-                status.textContent = 'Successfully updated! Site rebuilding now.'; status.classList.add('success');
-            } catch (err) { status.textContent = 'Error: ' + err.message; status.classList.add('error'); }
-        }
+                document.getElementById('btn-save-event').innerText = "Add Event";
+                renderUI();
+            };
+
+            window.removeEvent = function (i) {
+                if (confirm('Delete event?')) {
+                    db.events.splice(i, 1);
+                    renderUI();
+                }
+            };
+
+            window.updateLocation = function () {
+                db.locations[0] = {
+                    name: document.getElementById('loc-name').value,
+                    lat: parseFloat(document.getElementById('loc-lat').value) || 0,
+                    lng: parseFloat(document.getElementById('loc-lng').value) || 0,
+                    googleMapsUrl: document.getElementById('loc-google').value
+                };
+                alert("Updated locally. Remember to Push!");
+            };
+
+            window.addCarousel = async function () {
+                const urlInput = document.getElementById('new-carousel-img');
+                const fileInput = document.getElementById('new-carousel-file');
+                const btn = document.getElementById('btn-add-carousel');
+
+                try {
+                    btn.disabled = true; btn.innerText = "Processing...";
+                    if (fileInput.files.length > 0) {
+                        const url = await uploadToGithub(fileInput.files[0], 'carousel');
+                        if (url) db.carouselImages.push(url);
+                    } else if (urlInput.value) {
+                        db.carouselImages.push(urlInput.value);
+                    }
+                    urlInput.value = ''; fileInput.value = '';
+                    renderUI();
+                } catch (e) { alert(e.message); }
+                finally { btn.disabled = false; btn.innerText = "Add to Carousel"; }
+            };
+
+            async function uploadToGithub(file, prefix) {
+                const fileName = `${prefix}-${Date.now()}.${file.name.split('.').pop()}`;
+                const owner = document.getElementById('repo-owner').value;
+                const repo = document.getElementById('repo-name').value;
+                const uploadUrl = `https://api.github.com/repos/${owner}/${repo}/contents/assets/${fileName}`;
+
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = async () => {
+                        try {
+                            const content = reader.result.split(',')[1];
+                            const res = await fetch(uploadUrl, {
+                                method: 'PUT',
+                                headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ message: `Upload ${fileName}`, content })
+                            });
+                            if (!res.ok) throw new Error("Upload failed");
+                            const data = await res.json();
+                            resolve(data.content.download_url);
+                        } catch (e) { reject(e); }
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            window.pushToGitHub = async function () {
+                const status = document.getElementById('save-status');
+                status.className = 'status'; status.textContent = 'Pushing changes...'; status.style.display = 'block';
+
+                try {
+                    const res = await fetch(API_URL, {
+                        method: 'PUT',
+                        headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            message: "Update site data via Admin Panel",
+                            content: btoa(unescape(encodeURIComponent(JSON.stringify(db, null, 2)))),
+                            sha: CURRENT_SHA
+                        })
+                    });
+                    if (!res.ok) throw new Error('Push failed: ' + res.status);
+                    const data = await res.json();
+                    CURRENT_SHA = data.content.sha;
+                    status.textContent = 'Success! Site is being rebuilt.'; status.classList.add('success');
+                } catch (err) { status.textContent = 'Error: ' + err.message; status.classList.add('error'); }
+            };
+        })();
     </script>
 </body>
 
