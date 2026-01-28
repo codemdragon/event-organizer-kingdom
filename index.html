@@ -390,10 +390,102 @@
       display: block;
       opacity: 1;
     }
+
+    /* Preloader */
+    #preloader {
+      position: fixed;
+      inset: 0;
+      background: var(--white);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      transition: opacity 0.6s ease, visibility 0.6s;
+    }
+
+    .loader-content {
+      text-align: center;
+      animation: pulse 2s infinite ease-in-out;
+    }
+
+    .loader-logo {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 2rem;
+      color: var(--primary);
+    }
+
+    .loader-bar {
+      width: 200px;
+      height: 4px;
+      background: #f3f4f6;
+      border-radius: 2px;
+      overflow: hidden;
+      margin: 0 auto;
+    }
+
+    .loader-progress {
+      width: 40%;
+      height: 100%;
+      background: var(--gradient);
+      animation: progress 1.5s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 0.8;
+      }
+
+      50% {
+        transform: scale(1.05);
+        opacity: 1;
+      }
+    }
+
+    @keyframes progress {
+      0% {
+        transform: translateX(-100%);
+      }
+
+      100% {
+        transform: translateX(200%);
+      }
+    }
+
+    .flag-icon {
+      width: 20px;
+      margin-left: 6px;
+      vertical-align: middle;
+      border-radius: 2px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
   </style>
 </head>
 
 <body>
+
+  <div id="preloader">
+    <div class="loader-content">
+      <svg class="loader-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+        <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+        <path d="M4 22h16"></path>
+        <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
+        <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
+        <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
+      </svg>
+      <div class="loader-bar">
+        <div class="loader-progress"></div>
+      </div>
+      <p style="margin-top: 1rem; font-weight: 600; color: var(--text-light); letter-spacing: 0.05em;">GAMES KINGDOM PK
+      </p>
+    </div>
+  </div>
 
   <header>
     <div class="nav-container">
@@ -409,7 +501,7 @@
         </svg>
         <div>
           <h1>Games Kingdom PK</h1>
-          <p>Karachi, Pakistan</p>
+          <p>Karachi, Pakistan <img src="https://flagcdn.com/w40/pk.png" class="flag-icon" alt="Pakistan"></p>
         </div>
       </div>
       <nav>
@@ -511,8 +603,10 @@
         </svg>
         <span>Games Kingdom PK</span>
       </div>
-      <p id="footer-tagline">Premier Sports Event Organizers in Karachi, Pakistan</p>
-      <p style="margin-top: 1rem; opacity: 0.6; font-size: 0.875rem;">© 2026 Games Kingdom PK. All rights reserved.</p>
+      <p id="footer-tagline">Premier Sports Event Organizers in Karachi, Pakistan <img
+          src="https://flagcdn.com/w40/pk.png" class="flag-icon" alt="Pakistan"></p>
+      <p style="margin-top: 1rem; opacity: 0.6; font-size: 0.875rem;">Made with ❤️ in Pakistan | © 2026 Games Kingdom
+        PK. All rights reserved.</p>
     </div>
   </footer>
 
@@ -531,7 +625,14 @@
         renderUI();
       } catch (e) {
         console.error("Failed to load DB", e);
-        // Fallback or static message
+      } finally {
+        setTimeout(() => {
+          const loader = document.getElementById('preloader');
+          loader.style.opacity = '0';
+          setTimeout(() => {
+            loader.style.visibility = 'hidden';
+          }, 600);
+        }, 800);
       }
     }
 
