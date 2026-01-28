@@ -1,46 +1,44 @@
 {
-    "carouselImages": [
-        "https://images.unsplash.com/photo-1574602904324-a9ac0fe65331?q=80&w=1080&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=1080&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1517649763962-0c623066013b?q=80&w=1080&auto=format&fit=crop"
-    ],
-    "events": [
-        {
-            "id": "football",
-            "title": "Football Tournaments",
-            "description": "We organize exciting football tournaments across Karachi, from 5-a-side leagues to full 11-a-side competitions. Join us for thrilling matches, professional refereeing, and great prizes.",
-            "imageUrl": "https://images.unsplash.com/photo-1698844013403-b7c4cf0d3b2f?q=80&w=1080&auto=format&fit=crop",
-            "features": [
-                "Weekly & Monthly Leagues",
-                "Championship Tournaments",
-                "Corporate Team Events"
-            ]
-        },
-        {
-            "id": "cricket",
-            "title": "Cricket Tournaments",
-            "description": "Experience the passion of cricket with our professionally organized tournaments. From tape-ball cricket to hard-ball tournaments, we cater to all formats and skill levels.",
-            "imageUrl": "https://images.unsplash.com/photo-1730739628091-133de587ad14?q=80&w=1080&auto=format&fit=crop",
-            "features": [
-                "T20 & ODI Format Events",
-                "Inter-City Championships",
-                "School & College Tournaments"
-            ]
-        }
-    ],
-    "locations": [
-        {
-            "id": "primary-location",
-            "name": "Games Kingdom HQ",
-            "lat": 24.8607,
-            "lng": 67.0011,
-            "address": "Karachi, Sindh, Pakistan",
-            "googleMapsUrl": "https://maps.app.goo.gl/random"
-        }
-    ],
-    "contact": {
-        "phone": "+92 XXX XXXXXXX",
-        "email": "info@gameskingdompk.com",
-        "address": "Karachi, Sindh, Pakistan"
+  "carouselImages": [
+    "https://images.unsplash.com/photo-1574602904324-a9ac0fe65331?q=80&w=1080&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=1080&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1517649763962-0c623066013b?q=80&w=1080&auto=format&fit=crop"
+  ],
+  "events": [
+    {
+      "id": "football",
+      "title": "Football Tournaments",
+      "description": "We organize exciting football tournaments across Karachi, from 5-a-side leagues to full 11-a-side competitions. Join us for thrilling matches, professional refereeing, and great prizes.",
+      "imageUrl": "https://images.unsplash.com/photo-1698844013403-b7c4cf0d3b2f?q=80&w=1080&auto=format&fit=crop",
+      "features": [
+        "Weekly & Monthly Leagues",
+        "Championship Tournaments",
+        "Corporate Team Events"
+      ]
+    },
+    {
+      "id": "cricket",
+      "title": "Cricket Tournaments",
+      "description": "Experience the passion of cricket with our professionally organized tournaments. From tape-ball cricket to hard-ball tournaments, we cater to all formats and skill levels.",
+      "imageUrl": "https://images.unsplash.com/photo-1730739628091-133de587ad14?q=80&w=1080&auto=format&fit=crop",
+      "features": [
+        "T20 & ODI Format Events",
+        "Inter-City Championships",
+        "School & College Tournaments"
+      ]
     }
+  ],
+  "locations": [
+    {
+      "name": "Games Kingdom HQ",
+      "lat": 24.8607,
+      "lng": 67.0011,
+      "googleMapsUrl": "https://maps.app.goo.gl/random"
+    }
+  ],
+  "contact": {
+    "phone": "+92 XXX XXXXXXX",
+    "email": "info@gameskingdompk.com",
+    "address": "Karachi, Sindh, Pakistan"
+  }
 }
